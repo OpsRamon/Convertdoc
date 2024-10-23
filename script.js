@@ -1,13 +1,53 @@
-document.getElementById('convertButton').addEventListener('click', function() {
+const API_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZmVmNDhhZGM5M2NlNWI0ZjQ0NjVmNTljOTU4ZTVlZjBhNGQyYTUwMjhlNWE5YjEwMzE2ZDM5MmYwNDQ4NTcxOTk5OTljYTMzM2EwYTgzMzQiLCJpYXQiOjE3Mjk2OTc2MTYuMzg2ODM3LCJuYmYiOjE3Mjk2OTc2MTYuMzg2ODM5LCJleHAiOjQ4ODUzNzEyMTYuMzgxOTExLCJzdWIiOiI2OTk3Mzg4MCIsInNjb3BlcyI6WyJ1c2VyLnJlYWQiLCJ1c2VyLndyaXRlIiwidGFzay5yZWFkIiwidGFzay53cml0ZSIsIndlYmhvb2sucmVhZCIsIndlYmhvb2sud3JpdGUiLCJwcmVzZXQucmVhZCIsInByZXNldC53cml0ZSJdfQ.VwuDE0k8oIIDVXxZWDbzwlcWN9U757CHLyXhSwK490-65yJwCXx1nrlzs5h6IuBbvkWU6YhP7-TwtGocYsyABkLUFwbmuAU_h9LKO_K-TmnGEKY3ZdshMaHLtHfDOd3hHy79LYi9QQOUb2Vl_3W4UBpWY1iEE0Wiscs8VnDqoNimWm2hOKZaYyZX1skS8p4OyD4fuCAOnegdkd-bRSWa2QEIctaBdJYbZtx1BJUXMggWBUo8hzU9liuPZhDCXGSHRoQJnNzWbxqlkyJnRdp-9B13Wm6QDrs5jCV7Xta6MKh30VhIymQJGimTEo97bd3ll1b3piDXnC6_xbUzjuzpsIDPTD52GqL9HAbEnX-Sdq5U_-eSoK-yzSij031FsSDlvCd_Kc69UqZ1hERazjvPOUQ-YnGCsYE8TmTRMDxW1-hmtv5gxQ79bsjmcST9meijVR3rHGbb760ABoQJD50uMSIX1pa72QzQ44CZ8GcwkpoOWKBOl23rTj-YlmdwMHQzLcYS7Zb1kWZSPEs2NO2HldGvBMcY9GLPGtF_wiC97DwKWSJiVwhu9AnAAmYRcYxF0Yn2KJEEEWlOswrDntJFisJE7RrJsNihw2tSIthbJrRkbWnaVWR6sxIWk0VsAlnLHGEv7ENNonjDqaqU8KtFhfXs6TEkcVESYJ59rNDvU9A';
+
+document.getElementById('convertButton').addEventListener('click', async function() {
     const fileInput = document.getElementById('fileInput');
     const outputFormat = document.getElementById('outputFormat').value;
     const output = document.getElementById('output');
 
+    output.innerHTML = '';
+
     if (fileInput.files.length === 0) {
         output.innerHTML = "Por favor, selecione um arquivo para converter.";
-    } else {
-        const fileName = fileInput.files[0].name;
-        output.innerHTML = `Conversão de "${fileName}" para ${outputFormat.toUpperCase()} em progresso... (função ainda não implementada)`;
-        // Aqui você poderá implementar a lógica de conversão mais tarde.
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Upload do arquivo
+    try {
+        const uploadResponse = await fetch('https://api.cloudconvert.com/v2/import/upload', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: formData
+        });
+
+        const uploadData = await uploadResponse.json();
+        const fileId = uploadData.data.id;
+
+        // Iniciar conversão
+        const convertResponse = await fetch('https://api.cloudconvert.com/v2/convert', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "inputformat": file.name.split('.').pop(),
+                "outputformat": outputFormat,
+                "file": fileId
+            })
+        });
+
+        const convertData = await convertResponse.json();
+
+        // Exibir link para download do arquivo convertido
+        output.innerHTML = `Arquivo convertido com sucesso! Baixe aqui: <a href="${convertData.data.url}" target="_blank">Download</a>`;
+    } catch (error) {
+        output.innerHTML = "Erro ao converter o arquivo: " + error.message;
     }
 });
