@@ -5,7 +5,7 @@ document.getElementById('convertButton').addEventListener('click', async functio
     const outputFormat = document.getElementById('outputFormat').value;
     const output = document.getElementById('output');
 
-    output.innerHTML = '';
+    output.innerHTML = 'Conversão em progresso...'; // Mostra que a conversão começou
 
     if (fileInput.files.length === 0) {
         output.innerHTML = "Por favor, selecione um arquivo para converter.";
@@ -16,8 +16,8 @@ document.getElementById('convertButton').addEventListener('click', async functio
     const formData = new FormData();
     formData.append('file', file);
 
-    // Upload do arquivo
     try {
+        // 1. Fazer o upload do arquivo
         const uploadResponse = await fetch('https://api.cloudconvert.com/v2/import/upload', {
             method: 'POST',
             headers: {
@@ -26,10 +26,18 @@ document.getElementById('convertButton').addEventListener('click', async functio
             body: formData
         });
 
+        // Log da resposta do upload
         const uploadData = await uploadResponse.json();
+        console.log('Upload Response:', uploadResponse);
+        console.log('Upload Data:', uploadData);
+
+        if (!uploadData.data) {
+            throw new Error("Erro no upload do arquivo: " + uploadData.message);
+        }
+
         const fileId = uploadData.data.id;
 
-        // Iniciar conversão
+        // 2. Iniciar a conversão
         const convertResponse = await fetch('https://api.cloudconvert.com/v2/convert', {
             method: 'POST',
             headers: {
@@ -45,7 +53,7 @@ document.getElementById('convertButton').addEventListener('click', async functio
 
         const convertData = await convertResponse.json();
 
-        // Exibir link para download do arquivo convertido
+        // 3. Exibir o link para download
         output.innerHTML = `Arquivo convertido com sucesso! Baixe aqui: <a href="${convertData.data.url}" target="_blank">Download</a>`;
     } catch (error) {
         output.innerHTML = "Erro ao converter o arquivo: " + error.message;
